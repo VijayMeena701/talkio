@@ -1,247 +1,149 @@
+'use client';
 
-"use client"
-import { io } from "socket.io-client";
-import { useRef, useEffect, useState } from "react";
-import { FiVideo, FiVideoOff, FiMic, FiMicOff } from "react-icons/fi";
-import './page.css'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
 
-const configuration = {
-  iceServers: [
-    {
-      urls: ["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"],
-    },
-  ],
-  iceCandidatePoolSize: 10,
-};
-const socket = io("http://localhost:3001", { transports: ["websocket"] });
+export default function Home() {
+  const [userName, setUserName] = useState('');
+  const [roomId, setRoomId] = useState('');
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const router = useRouter();
 
-let pc;
-let localStream;
-let startButton;
-let hangupButton;
-let muteAudButton;
-let remoteVideo;
-let localVideo;
-socket.on("message", (e) => {
-  if (!localStream) {
-    console.log("not ready yet");
-    return;
-  }
-  switch (e.type) {
-    case "offer":
-      handleOffer(e);
-      break;
-    case "answer":
-      handleAnswer(e);
-      break;
-    case "candidate":
-      handleCandidate(e);
-      break;
-    case "ready":
-      // A second tab joined. This tab will initiate a call unless in a call already.
-      if (pc) {
-        console.log("already in call, ignoring");
-        return;
-      }
-      makeCall();
-      break;
-    case "bye":
-      if (pc) {
-        hangup();
-      }
-      break;
-    default:
-      console.log("unhandled", e);
-      break;
-  }
-});
-
-async function makeCall() {
-  try {
-    pc = new RTCPeerConnection(configuration);
-    pc.onicecandidate = (e) => {
-      const message = {
-        type: "candidate",
-        candidate: null,
-      };
-      if (e.candidate) {
-        message.candidate = e.candidate.candidate;
-        message.sdpMid = e.candidate.sdpMid;
-        message.sdpMLineIndex = e.candidate.sdpMLineIndex;
-      }
-      socket.emit("message", message);
-    };
-    pc.ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
-    localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
-    const offer = await pc.createOffer();
-    socket.emit("message", { type: "offer", sdp: offer.sdp });
-    await pc.setLocalDescription(offer);
-  } catch (e) {
-    console.log(e);
-  }
-}
-
-async function handleOffer(offer) {
-  if (pc) {
-    console.error("existing peerconnection");
-    return;
-  }
-  try {
-    pc = new RTCPeerConnection(configuration);
-    pc.onicecandidate = (e) => {
-      const message = {
-        type: "candidate",
-        candidate: null,
-      };
-      if (e.candidate) {
-        message.candidate = e.candidate.candidate;
-        message.sdpMid = e.candidate.sdpMid;
-        message.sdpMLineIndex = e.candidate.sdpMLineIndex;
-      }
-      socket.emit("message", message);
-    };
-    pc.ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
-    localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
-    await pc.setRemoteDescription(offer);
-
-    const answer = await pc.createAnswer();
-    socket.emit("message", { type: "answer", sdp: answer.sdp });
-    await pc.setLocalDescription(answer);
-  } catch (e) {
-    console.log(e);
-  }
-}
-
-async function handleAnswer(answer) {
-  if (!pc) {
-    console.error("no peerconnection");
-    return;
-  }
-  try {
-    await pc.setRemoteDescription(answer);
-  } catch (e) {
-    console.log(e);
-  }
-}
-
-async function handleCandidate(candidate) {
-  try {
-    if (!pc) {
-      console.error("no peerconnection");
+  const handleJoinRoom = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!userName.trim()) {
+      alert('Please enter your name');
       return;
     }
-    if (!candidate) {
-      await pc.addIceCandidate(null);
-    } else {
-      await pc.addIceCandidate(candidate);
+    
+    if (!roomId.trim()) {
+      alert('Please enter a room ID');
+      return;
     }
-  } catch (e) {
-    console.log(e);
-  }
-}
-async function hangup() {
-  if (pc) {
-    pc.close();
-    pc = null;
-  }
-  localStream.getTracks().forEach((track) => track.stop());
-  localStream = null;
-  startButton.current.disabled = false;
-  hangupButton.current.disabled = true;
-  muteAudButton.current.disabled = true;
-}
-
-function App() {
-  startButton = useRef(null);
-  hangupButton = useRef(null);
-  muteAudButton = useRef(null);
-  localVideo = useRef(null);
-  remoteVideo = useRef(null);
-  useEffect(() => {
-    hangupButton.current.disabled = true;
-    muteAudButton.current.disabled = true;
-  }, []);
-  const [audiostate, setAudio] = useState(false);
-
-  const startB = async () => {
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: { echoCancellation: true },
-      });
-      localVideo.current.srcObject = localStream;
-    } catch (err) {
-      console.log(err);
-    }
-
-    startButton.current.disabled = true;
-    hangupButton.current.disabled = false;
-    muteAudButton.current.disabled = false;
-
-    socket.emit("message", { type: "ready" });
+    
+    router.push(`/room/${roomId}?userName=${encodeURIComponent(userName)}`);
   };
-
-  const hangB = async () => {
-    hangup();
-    socket.emit("message", { type: "bye" });
-  };
-
-  function muteAudio() {
-    if (audiostate) {
-      localVideo.current.muted = true;
-      setAudio(false);
-    } else {
-      localVideo.current.muted = false;
-      setAudio(true);
+  
+  const handleCreateRoom = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!userName.trim()) {
+      alert('Please enter your name');
+      return;
     }
-  }
+    
+    const newRoomId = uuidv4().substring(0, 8);
+    router.push(`/room/${newRoomId}?userName=${encodeURIComponent(userName)}`);
+  };
 
   return (
-    <>
-      <main className="container  ">
-        <div className="video bg-main">
-          <video
-            ref={localVideo}
-            className="video-item"
-            autoPlay
-            playsInline
-            src=" "
-          ></video>
-          <video
-            ref={remoteVideo}
-            className="video-item"
-            autoPlay
-            playsInline
-            src=" "
-          ></video>
+    <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-900">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Video Conferencing
+          </h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-300">
+            Connect with anyone, anywhere.
+          </p>
         </div>
-
-        <div className="btn">
-          <button
-            className="btn-item btn-start"
-            ref={startButton}
-            onClick={startB}
-          >
-            <FiVideo />
-          </button>
-          <button
-            className="btn-item btn-end"
-            ref={hangupButton}
-            onClick={hangB}
-          >
-            <FiVideoOff />
-          </button>
-          <button
-            className="btn-item btn-start"
-            ref={muteAudButton}
-            onClick={muteAudio}
-          >
-            {audiostate ? <FiMic /> : <FiMicOff />}
-          </button>
+        
+        <div className="flex justify-center">
+          <div className="flex space-x-4 border-b border-gray-200 dark:border-gray-700">
+            <button
+              className={`px-4 py-2 font-medium ${
+                !isCreatingRoom
+                  ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+              onClick={() => setIsCreatingRoom(false)}
+            >
+              Join Room
+            </button>
+            <button
+              className={`px-4 py-2 font-medium ${
+                isCreatingRoom
+                  ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+              onClick={() => setIsCreatingRoom(true)}
+            >
+              Create Room
+            </button>
+          </div>
         </div>
-      </main>
-    </>
+        
+        {isCreatingRoom ? (
+          <form onSubmit={handleCreateRoom} className="space-y-6">
+            <div>
+              <label htmlFor="create-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Your Name
+              </label>
+              <input
+                id="create-name"
+                type="text"
+                required
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter your name"
+              />
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Create New Room
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleJoinRoom} className="space-y-6">
+            <div>
+              <label htmlFor="join-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Your Name
+              </label>
+              <input
+                id="join-name"
+                type="text"
+                required
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter your name"
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="room-id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Room ID
+              </label>
+              <input
+                id="room-id"
+                type="text"
+                required
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter room ID"
+              />
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Join Room
+            </button>
+          </form>
+        )}
+      </div>
+      
+      <footer className="mt-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+        <p>© {new Date().getFullYear()} Video Conferencing App. All rights reserved.</p>
+      </footer>
+    </div>
   );
 }
-
-export default App
