@@ -19,6 +19,7 @@ export interface Room {
 
 export interface PeerConnection {
   peerId: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   peer: any; // simple-peer instance
   stream?: MediaStream;
 }

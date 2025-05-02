@@ -17,6 +17,7 @@ const MeetingRoom = () => {
   const roomId = useParams().roomId as string;
   const userName = useSearchParams().get('userName') as string;
   const [videoStream, setVideoStream] = React.useState<MediaStream | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isAudioEnabled, setIsAudioEnabled] = React.useState(true);
   const [videoState, setVideoState] = React.useState(VIDEO_STATES.NONE);
 
@@ -49,6 +50,7 @@ const MeetingRoom = () => {
         videoStream.getTracks().forEach(track => track.stop());
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Modify the toggle video function to replace tracks instead of the whole stream
