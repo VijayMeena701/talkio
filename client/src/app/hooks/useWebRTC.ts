@@ -25,7 +25,7 @@ export default function useWebRTC({ meetingId, userName, localStream }: UseWebRT
     React.useEffect(() => {
         // Connect to signaling server
         if (!socketRef.current) {
-            socketRef.current = io("http://192.168.1.7:3001", {
+            socketRef.current = io("https://ws.talkio.vijaymeena.dev", {
                 query: { userName, meetingId }
             });
 
