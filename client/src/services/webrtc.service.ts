@@ -2,6 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import Peer from 'simple-peer';
 import { v4 as uuidv4 } from 'uuid';
 import { PeerConnection, User, Message } from '@/types';
+import TURNConfigService from './turn-config.service';
 
 class WebRTCService {
   private socket: Socket | null = null;
@@ -12,25 +13,40 @@ class WebRTCService {
   private userName: string = '';
   private roomId: string = '';
   private isConnected: boolean = false;
+  private isAudioEnabled: boolean = false;
+  private isVideoEnabled: boolean = false;
+  private turnConfigService: TURNConfigService;
 
-  // ICE servers config for NAT traversal
-  private iceServers = {
-    iceServers: [
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun3.l.google.com:19302' },
-      { urls: 'stun:stun4.l.google.com:19302' }
-    ]
-  };
-
+  // ICE servers config for NAT traversal - now using TURN config service
+  private iceServers: RTCConfiguration;
   private onPeerConnectedCallback: ((peerId: string, stream: MediaStream) => void) | null = null;
   private onPeerDisconnectedCallback: ((peerId: string) => void) | null = null;
   private onUserJoinedCallback: ((user: User) => void) | null = null;
   private onUserLeftCallback: ((userId: string) => void) | null = null;
-  private onMessageReceivedCallback: ((message: Message) => void) | null = null;
-
+  private onMessageReceivedCallback: ((message: Message) => void) | null = null; private onMediaStateChangedCallback: ((audioEnabled: boolean, videoEnabled: boolean) => void) | null = null;
   constructor() {
     this.userId = uuidv4();
+    this.turnConfigService = TURNConfigService.getInstance();
+    this.iceServers = this.turnConfigService.getWebRTCConfig();
+  }
+
+  private updateMediaState(): void {
+    if (!this.localStream) {
+      this.isAudioEnabled = false;
+      this.isVideoEnabled = false;
+    } else {
+      const audioTracks = this.localStream.getAudioTracks();
+      const videoTracks = this.localStream.getVideoTracks();
+
+      this.isAudioEnabled = audioTracks.length > 0 && audioTracks.some(track => track.enabled);
+      this.isVideoEnabled = videoTracks.length > 0 && videoTracks.some(track => track.enabled);
+    }
+
+    console.log(`Media state updated: Audio=${this.isAudioEnabled}, Video=${this.isVideoEnabled}`);
+
+    if (this.onMediaStateChangedCallback) {
+      this.onMediaStateChangedCallback(this.isAudioEnabled, this.isVideoEnabled);
+    }
   }
 
   public connect(serverUrl?: string): void {
@@ -39,7 +55,7 @@ class WebRTCService {
       const url =
         typeof window !== 'undefined' && process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL
           ? process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL
-          : serverUrl || 'http://localhost:3001';
+          : serverUrl || 'https://ws.talkio.vijaymeena.dev';
       console.log(`Connecting to signaling server at ${url}`);
       this.socket = io(url);
 
@@ -136,12 +152,26 @@ class WebRTCService {
             }
           }
         });
-      });
-
-      // Request room info on connection
+      });      // Request room info on connection
       this.socket.on('connect', () => {
         if (this.roomId) {
           this.socket?.emit('get-room-info', { roomId: this.roomId });
+        }
+      });      // Handle stream updates from other peers
+      this.socket.on('stream-update', ({ userId }: { userId: string }) => {
+        console.log(`Peer ${userId} is updating their stream`);
+
+        // If we have a connection to this peer, close it and wait for them to reinitiate
+        // This prevents both peers from trying to be initiators simultaneously
+        const peerConnection = this.peers.get(userId);
+        if (peerConnection) {
+          console.log(`Closing connection to ${userId} and waiting for reinitiation after their stream update`);
+          try {
+            peerConnection.peer.destroy();
+            this.peers.delete(userId);
+          } catch (error) {
+            console.error(`Error closing connection to ${userId}:`, error);
+          }
         }
       });
     } catch (error) {
@@ -174,9 +204,7 @@ class WebRTCService {
     try {
       // Create an empty MediaStream as default - we'll try to get real media,
       // but we can still join the room without it
-      this.localStream = new MediaStream();
-
-      // Try to get both video and audio
+      this.localStream = new MediaStream();      // Try to get both video and audio
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
@@ -211,6 +239,9 @@ class WebRTCService {
           }
         }
       }
+
+      // Update media state after getting stream
+      this.updateMediaState();
 
       // Process any pending connections now that we have a media stream
       if (this.pendingConnections.length > 0) {
@@ -379,25 +410,183 @@ class WebRTCService {
   public onUserJoined(callback: (user: User) => void): void {
     this.onUserJoinedCallback = callback;
   }
-
   public onUserLeft(callback: (userId: string) => void): void {
     this.onUserLeftCallback = callback;
   }
 
-  public toggleAudio(enabled: boolean): void {
-    if (this.localStream) {
-      this.localStream.getAudioTracks().forEach(track => {
-        track.enabled = enabled;
-      });
-    }
+  public onMediaStateChanged(callback: (audioEnabled: boolean, videoEnabled: boolean) => void): void {
+    this.onMediaStateChangedCallback = callback;
   }
 
-  public toggleVideo(enabled: boolean): void {
-    if (this.localStream) {
-      this.localStream.getVideoTracks().forEach(track => {
-        track.enabled = enabled;
+  public getAudioEnabled(): boolean {
+    return this.isAudioEnabled;
+  }
+
+  public getVideoEnabled(): boolean {
+    return this.isVideoEnabled;
+  } public async toggleAudio(enabled: boolean): Promise<void> {
+    if (!this.localStream) return;
+
+    try {
+      if (enabled) {
+        // Always create a new stream when enabling audio for consistency
+        console.log('Creating new stream with audio enabled...');
+
+        // Get current video tracks to preserve them
+        const currentVideoTracks = this.localStream.getVideoTracks();
+
+        // Get new audio stream
+        const audioStream = await navigator.mediaDevices.getUserMedia({
+          video: false,
+          audio: true
+        });
+        const audioTrack = audioStream.getAudioTracks()[0];
+
+        if (audioTrack) {
+          // Create new stream with both video and audio
+          const newStream = new MediaStream([...currentVideoTracks, audioTrack]);
+
+          // Update all peer connections with the new stream
+          await this.updatePeerStreams(newStream);
+
+          console.log('Audio enabled and peers updated');
+        }
+      } else {
+        // Create a new stream without audio when disabling
+        console.log('Creating new stream with audio disabled...');
+
+        // Get current video tracks to preserve them
+        const currentVideoTracks = this.localStream.getVideoTracks();
+
+        // Stop current audio tracks
+        const audioTracks = this.localStream.getAudioTracks();
+        audioTracks.forEach(track => track.stop());
+
+        // Create new stream with only video
+        const newStream = new MediaStream(currentVideoTracks);
+
+        // Update all peer connections with the new stream
+        await this.updatePeerStreams(newStream);
+
+        console.log('Audio disabled and peers updated');
+      }
+
+      // Update media state after toggle
+      this.updateMediaState();
+    } catch (error) {
+      console.error('Error toggling audio:', error);
+    }
+  } public async toggleVideo(enabled: boolean): Promise<void> {
+    if (!this.localStream) return;
+
+    try {
+      if (enabled) {
+        // Always create a new stream when enabling video for consistency
+        console.log('Creating new stream with video enabled...');
+
+        // Get current audio tracks to preserve them
+        const currentAudioTracks = this.localStream.getAudioTracks();
+
+        // Get new video stream
+        const videoStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+        const videoTrack = videoStream.getVideoTracks()[0];
+
+        if (videoTrack) {
+          // Create new stream with both audio and video
+          const newStream = new MediaStream([...currentAudioTracks, videoTrack]);
+
+          // Update all peer connections with the new stream
+          await this.updatePeerStreams(newStream);
+
+          console.log('Video enabled and peers updated');
+        }
+      } else {
+        // Create a new stream without video when disabling
+        console.log('Creating new stream with video disabled...');
+
+        // Get current audio tracks to preserve them
+        const currentAudioTracks = this.localStream.getAudioTracks();
+
+        // Stop current video tracks
+        const videoTracks = this.localStream.getVideoTracks();
+        videoTracks.forEach(track => track.stop());
+
+        // Create new stream with only audio
+        const newStream = new MediaStream(currentAudioTracks);
+
+        // Update all peer connections with the new stream
+        await this.updatePeerStreams(newStream);
+
+        console.log('Video disabled and peers updated');
+      }
+
+      // Update media state after toggle
+      this.updateMediaState();
+    } catch (error) {
+      console.error('Error toggling video:', error);
+    }
+  } private async updatePeerStreams(newStream: MediaStream): Promise<void> {
+    console.log('Updating peer connections with new stream...');
+
+    // Update our local stream reference first
+    this.localStream = newStream;
+
+    // Get the list of current peers before we start destroying them
+    const peerEntries = Array.from(this.peers.entries());
+
+    if (peerEntries.length === 0) {
+      console.log('No peers to update');
+      return;
+    }
+
+    // Send stream update notification BEFORE destroying connections
+    // This gives other peers a chance to prepare and avoid conflicts
+    if (this.socket) {
+      this.socket.emit('stream-update', {
+        userId: this.userId,
+        roomId: this.roomId
       });
     }
+
+    // Wait a moment for the signal to be processed by other peers
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Close existing connections gracefully
+    this.peers.forEach((peerConnection) => {
+      try {
+        peerConnection.peer.destroy();
+      } catch (error) {
+        console.error('Error destroying peer:', error);
+      }
+    });
+
+    this.peers.clear();
+
+    // Wait for cleanup to complete
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // Recreate connections with new stream
+    // Always be initiator when updating our own stream, since we sent the update signal
+    for (const [peerId] of peerEntries) {
+      try {
+        console.log(`Recreating connection to peer ${peerId} as initiator`);
+        this.createPeer(peerId, true);
+
+        // Small delay between recreations to avoid overwhelming the signaling
+        await new Promise(resolve => setTimeout(resolve, 150));
+      } catch (error) {
+        console.error(`Error recreating peer ${peerId}:`, error);
+      }
+    }
+
+    console.log('Peer stream update completed');
+  }
+  private async recreatePeerConnections(): Promise<void> {
+    if (!this.localStream) return;
+    await this.updatePeerStreams(this.localStream);
   }
 
   // Add method to send chat messages
@@ -418,7 +607,6 @@ class WebRTCService {
   public onMessageReceived(callback: (message: Message) => void): void {
     this.onMessageReceivedCallback = callback;
   }
-
   // Add method to request room participants
   public requestRoomInfo(): void {
     if (!this.socket || !this.roomId) {
@@ -428,6 +616,42 @@ class WebRTCService {
 
     console.log('Requesting room info for room:', this.roomId);
     this.socket.emit('get-room-info', { roomId: this.roomId });
+  }
+
+  // TURN Server Configuration Methods
+  public updateTURNConfiguration(): void {
+    this.iceServers = this.turnConfigService.getWebRTCConfig();
+    console.log('Updated ICE servers configuration:', this.iceServers);
+  }
+
+  public addTURNServer(urls: string | string[], username: string, credential: string): void {
+    this.turnConfigService.addTURNServer({ urls, username, credential });
+    this.updateTURNConfiguration();
+  }
+
+  public removeTURNServer(urls: string | string[]): void {
+    this.turnConfigService.removeTURNServer(urls);
+    this.updateTURNConfiguration();
+  }
+
+  public getTURNConfiguration() {
+    return this.turnConfigService.getSettings();
+  }
+
+  public isUsingCustomTURN(): boolean {
+    return this.turnConfigService.isUsingCustomTURN();
+  }
+
+  public async testTURNConnectivity(): Promise<boolean> {
+    return this.turnConfigService.testTURNConnectivity();
+  }
+
+  public async validateTURNCredentials(urls: string | string[], username: string, credential: string): Promise<boolean> {
+    return this.turnConfigService.validateTURNCredentials({ urls, username, credential });
+  }
+
+  public getICEServers() {
+    return this.turnConfigService.getICEServers();
   }
 }
 
