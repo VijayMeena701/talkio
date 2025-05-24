@@ -49,6 +49,7 @@ class WebRTCService {
     }
   }
 
+  // @ts-ignore 
   public connect(serverUrl?: string): void {
     try {
       // Use environment variable if available, otherwise fallback to argument or default

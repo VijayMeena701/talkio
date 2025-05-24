@@ -220,7 +220,7 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
                                 <option value="relay">Relay Only (TURN only)</option>
                             </select>
                             <p className="text-xs text-gray-500 mt-1">
-                                "Relay Only" forces all traffic through TURN servers for maximum privacy
+                                &ldquo;Relay Only&rdquo; forces all traffic through TURN servers for maximum privacy
                             </p>
                         </div>
 
