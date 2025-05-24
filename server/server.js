@@ -20,9 +20,15 @@ const server = createServer(app);
 // Initialize Socket.IO with improved configuration
 const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+    origin: process.env.NODE_ENV === 'production'
+      ? process.env.ALLOWED_ORIGINS?.split(',') || ["https://talkio.vijaymeena.dev"]
+      : ["http://localhost:3000", "https://talkio.vijaymeena.dev"],
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  transports: ['websocket', 'polling']
 });
 
 // Store room and user information
