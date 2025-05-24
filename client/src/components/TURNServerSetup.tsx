@@ -46,7 +46,7 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
         setValidationResult(null);
 
         try {
-            const urls = turnConfig.urls.split(',').map(url => url.trim());
+            const urls = (turnConfig.urls as string).split(',').map(url => url.trim());
             const isValid = await turnConfigService.validateTURNCredentials({
                 urls,
                 username: turnConfig.username,
@@ -69,7 +69,7 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
                 return;
             }
 
-            const urls = turnConfig.urls.split(',').map(url => url.trim());
+            const urls = (turnConfig.urls as string).split(',').map(url => url.trim());
             turnConfigService.addTURNServer({
                 urls,
                 username: turnConfig.username,
@@ -185,8 +185,8 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
 
                             {validationResult && (
                                 <div className={`px-3 py-2 rounded-md text-sm ${validationResult === 'success'
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-red-100 text-red-800'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-red-100 text-red-800'
                                     }`}>
                                     {validationResult === 'success' ? 'Valid credentials!' : 'Invalid credentials!'}
                                 </div>

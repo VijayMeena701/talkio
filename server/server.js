@@ -21,8 +21,8 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production'
-      ? process.env.ALLOWED_ORIGINS?.split(',') || ["https://your-client-domain.com"]
-      : ["http://localhost:3000", "https://ws.talkio.vijaymeena.dev"],
+      ? process.env.ALLOWED_ORIGINS?.split(',') || ["https://talkio.vijaymeena.dev"]
+      : "*",
     methods: ["GET", "POST"],
     credentials: true
   },
