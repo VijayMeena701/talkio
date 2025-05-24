@@ -20,9 +20,7 @@ const server = createServer(app);
 // Initialize Socket.IO with improved configuration
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production'
-      ? process.env.ALLOWED_ORIGINS?.split(',') || ["https://talkio.vijaymeena.dev"]
-      : "*",
+    origin: "*",
     methods: ["GET", "POST"],
     credentials: true
   },
