@@ -258,7 +258,7 @@ export default function useWebRTC({
             reconnectionAttempts: maxReconnectAttempts,
             reconnectionDelay: reconnectDelay.current,
             timeout: 10000,
-            transports: ['websocket', 'polling']
+            // transports: ['websocket', 'polling']
         });
 
         const socket = socketRef.current;
