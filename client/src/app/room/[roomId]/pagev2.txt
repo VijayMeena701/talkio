@@ -16,7 +16,7 @@ const configuration = {
     ],
     iceCandidatePoolSize: 10,
 };
-const socket = io("http://localhost:3001", { transports: ["websocket"] });
+const socket = io("https://ws.talkio.vijaymeena.dev", { transports: ["websocket"] });
 
 let pc: RTCPeerConnection | null = null;
 // let localStream: MediaStream | null = null;

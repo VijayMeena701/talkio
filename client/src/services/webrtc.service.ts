@@ -52,10 +52,7 @@ class WebRTCService {
   public connect(serverUrl?: string): void {
     try {
       // Use environment variable if available, otherwise fallback to argument or default
-      const url =
-        typeof window !== 'undefined' && process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL
-          ? process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL
-          : serverUrl || 'https://ws.talkio.vijaymeena.dev';
+      const url = 'https://ws.talkio.vijaymeena.dev';
       console.log(`Connecting to signaling server at ${url}`);
       this.socket = io(url);
 

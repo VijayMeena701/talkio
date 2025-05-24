@@ -248,11 +248,12 @@ export default function useWebRTC({
         setIsConnecting(true);
         setError(undefined);
 
-        const socketUrl = serverUrl || "https://ws.talkio.vijaymeena.dev";
+        const socketUrl = "https://ws.talkio.vijaymeena.dev";
         console.log(`Connecting to signaling server: ${socketUrl}`);
 
         socketRef.current = io(socketUrl, {
             query: { userName, meetingId },
+            upgrade: true,
             reconnection: true,
             reconnectionAttempts: maxReconnectAttempts,
             reconnectionDelay: reconnectDelay.current,

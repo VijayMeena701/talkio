@@ -225,7 +225,7 @@ const MyApp = (function () {
     }
 
     function event_process_for_signalling_server() {
-        socket = io.connect("http://localhost:3001");
+        socket = io.connect("https://ws.talkio.vijaymeena.dev");
 
         const SDP_function = (data, to_connid) => {
             socket.emit("SDPProcess", {
