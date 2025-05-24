@@ -42,11 +42,24 @@ export interface ICEServer {
   credential?: string;
 }
 
+export interface TURNServerConfig {
+  urls: string | string[];
+  username: string;
+  credential: string;
+}
+
 export interface WebRTCConfig {
   iceServers: ICEServer[];
   iceCandidatePoolSize?: number;
   bundlePolicy?: RTCBundlePolicy;
   rtcpMuxPolicy?: RTCRtcpMuxPolicy;
+}
+
+export interface WebRTCSettings {
+  useCustomTURN?: boolean;
+  turnServers?: TURNServerConfig[];
+  stunServers?: string[];
+  iceTransportPolicy?: RTCIceTransportPolicy;
 }
 
 // Connection and Stream types

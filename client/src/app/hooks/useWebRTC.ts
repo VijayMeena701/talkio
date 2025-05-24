@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import io, { Socket } from "socket.io-client";
 import { UseWebRTCReturn, WebRTCConfig, Message, RemoteStreamData } from "@/types";
 import { v4 as uuidv4 } from 'uuid';
+import TURNConfigService from "@/services/turn-config.service";
 
 // Interface for RTCStats with the properties we need
 interface RTCInboundRtpStats extends RTCStats {
@@ -11,13 +12,11 @@ interface RTCInboundRtpStats extends RTCStats {
     packetsReceived?: number;
 }
 
-// Optimized ICE servers configuration
-const DEFAULT_ICE_SERVERS: RTCIceServer[] = [
-    { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun3.l.google.com:19302" },
-    { urls: "stun:stun4.l.google.com:19302" }
-];
+// Get TURN configuration service instance
+const turnConfigService = TURNConfigService.getInstance();
+
+// Get ICE servers configuration from TURN service
+const DEFAULT_ICE_SERVERS = turnConfigService.getICEServers();
 
 const DEFAULT_CONFIG: WebRTCConfig = {
     iceServers: DEFAULT_ICE_SERVERS,
@@ -249,7 +248,7 @@ export default function useWebRTC({
         setIsConnecting(true);
         setError(undefined);
 
-        const socketUrl = serverUrl || "http://localhost:3006";
+        const socketUrl = serverUrl || "https://ws.talkio.vijaymeena.dev";
         console.log(`Connecting to signaling server: ${socketUrl}`);
 
         socketRef.current = io(socketUrl, {

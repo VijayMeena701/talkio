@@ -2,6 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import Peer from 'simple-peer';
 import { v4 as uuidv4 } from 'uuid';
 import { PeerConnection, User, Message } from '@/types';
+import TURNConfigService from './turn-config.service';
 
 class WebRTCService {
   private socket: Socket | null = null;
@@ -14,24 +15,19 @@ class WebRTCService {
   private isConnected: boolean = false;
   private isAudioEnabled: boolean = false;
   private isVideoEnabled: boolean = false;
+  private turnConfigService: TURNConfigService;
 
-  // ICE servers config for NAT traversal
-  private iceServers = {
-    iceServers: [
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun3.l.google.com:19302' },
-      { urls: 'stun:stun4.l.google.com:19302' }
-    ]
-  };
+  // ICE servers config for NAT traversal - now using TURN config service
+  private iceServers: RTCConfiguration;
   private onPeerConnectedCallback: ((peerId: string, stream: MediaStream) => void) | null = null;
   private onPeerDisconnectedCallback: ((peerId: string) => void) | null = null;
   private onUserJoinedCallback: ((user: User) => void) | null = null;
   private onUserLeftCallback: ((userId: string) => void) | null = null;
-  private onMessageReceivedCallback: ((message: Message) => void) | null = null;
-  private onMediaStateChangedCallback: ((audioEnabled: boolean, videoEnabled: boolean) => void) | null = null;
+  private onMessageReceivedCallback: ((message: Message) => void) | null = null; private onMediaStateChangedCallback: ((audioEnabled: boolean, videoEnabled: boolean) => void) | null = null;
   constructor() {
     this.userId = uuidv4();
+    this.turnConfigService = TURNConfigService.getInstance();
+    this.iceServers = this.turnConfigService.getWebRTCConfig();
   }
 
   private updateMediaState(): void {
@@ -59,7 +55,7 @@ class WebRTCService {
       const url =
         typeof window !== 'undefined' && process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL
           ? process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL
-          : serverUrl || 'http://localhost:3001';
+          : serverUrl || 'https://ws.talkio.vijaymeena.dev';
       console.log(`Connecting to signaling server at ${url}`);
       this.socket = io(url);
 
@@ -611,7 +607,6 @@ class WebRTCService {
   public onMessageReceived(callback: (message: Message) => void): void {
     this.onMessageReceivedCallback = callback;
   }
-
   // Add method to request room participants
   public requestRoomInfo(): void {
     if (!this.socket || !this.roomId) {
@@ -621,6 +616,42 @@ class WebRTCService {
 
     console.log('Requesting room info for room:', this.roomId);
     this.socket.emit('get-room-info', { roomId: this.roomId });
+  }
+
+  // TURN Server Configuration Methods
+  public updateTURNConfiguration(): void {
+    this.iceServers = this.turnConfigService.getWebRTCConfig();
+    console.log('Updated ICE servers configuration:', this.iceServers);
+  }
+
+  public addTURNServer(urls: string | string[], username: string, credential: string): void {
+    this.turnConfigService.addTURNServer({ urls, username, credential });
+    this.updateTURNConfiguration();
+  }
+
+  public removeTURNServer(urls: string | string[]): void {
+    this.turnConfigService.removeTURNServer(urls);
+    this.updateTURNConfiguration();
+  }
+
+  public getTURNConfiguration() {
+    return this.turnConfigService.getSettings();
+  }
+
+  public isUsingCustomTURN(): boolean {
+    return this.turnConfigService.isUsingCustomTURN();
+  }
+
+  public async testTURNConnectivity(): Promise<boolean> {
+    return this.turnConfigService.testTURNConnectivity();
+  }
+
+  public async validateTURNCredentials(urls: string | string[], username: string, credential: string): Promise<boolean> {
+    return this.turnConfigService.validateTURNCredentials({ urls, username, credential });
+  }
+
+  public getICEServers() {
+    return this.turnConfigService.getICEServers();
   }
 }
 
