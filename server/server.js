@@ -323,7 +323,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3006;
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`🚀 Video Conferencing Server running on port ${PORT}`);
   console.log(`📊 Health check available at http://localhost:${PORT}/health`);
