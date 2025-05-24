@@ -49,8 +49,7 @@ class WebRTCService {
     }
   }
 
-  // @ts-ignore 
-  public connect(serverUrl?: string): void {
+  public connect(): void {
     try {
       // Use environment variable if available, otherwise fallback to argument or default
       const url = 'https://ws.talkio.vijaymeena.dev';
