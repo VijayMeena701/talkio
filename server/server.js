@@ -186,12 +186,10 @@ io.on("connection", (socket) => {
       if (!userInfo) {
         socket.emit('error', { message: 'User not found' });
         return;
-      }
-
-      const message = {
+      } const message = {
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         text: messageData.text || '',
-        senderId: userInfo.userId,
+        senderId: socket.id,
         senderName: userInfo.userName,
         timestamp: new Date().toISOString(),
         roomId: userInfo.roomId
