@@ -166,7 +166,7 @@ const MeetingRoom = () => {
   }
   return (
     <ErrorBoundary>
-      <div className="flex flex-col h-screen bg-gray-900">
+      <div className="flex flex-col h-[calc(100dvh)] bg-gray-900">
         <header className="p-4 bg-gray-800 text-white text-center">
           <h1 className="text-xl">Meeting Room: {roomId}</h1>
           {socketId && <p className="text-sm">Socket ID: {socketId}</p>}
