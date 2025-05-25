@@ -34,7 +34,7 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
                 credential: firstServer.credential
             });
         }
-    }, []);
+    }, [turnConfigService]);
 
     const handleValidateCredentials = async () => {
         if (!turnConfig.urls || !turnConfig.username || !turnConfig.credential) {

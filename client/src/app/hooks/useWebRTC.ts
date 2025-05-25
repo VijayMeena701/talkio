@@ -49,8 +49,7 @@ export default function useWebRTC({
     meetingId,
     userName,
     localStream,
-    config,
-    serverUrl
+    config
 }: UseWebRTCProps): UseWebRTCReturn {
     // State management
     const [peers, setPeers] = useState<Record<string, RTCPeerConnection>>({});
@@ -299,7 +298,7 @@ export default function useWebRTC({
             console.error("Socket error:", err);
             setError(err.message || "Socket error occurred");
         }); return socket;
-    }, [meetingId, userName, serverUrl]);
+    }, [meetingId, userName]);
 
     // Chat functionality
     const sendMessage = useCallback((messageData: Omit<Message, 'id' | 'timestamp'>) => {
