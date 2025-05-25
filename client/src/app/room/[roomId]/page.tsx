@@ -14,39 +14,72 @@ const MeetingRoom = () => {
   const userName = useSearchParams().get('userName') as string;
   const [localStream, setLocalStream] = React.useState<MediaStream | null>(null);
   const [isChatOpen, setIsChatOpen] = React.useState(false);  // Calculate optimal grid layout based on participant count
+  // Calculate optimal grid layout based on participant count and screen size
   const getGridLayout = (participantCount: number) => {
-    if (participantCount === 1) {
-      return { cols: 1, rows: 1, gridClass: 'grid-cols-1' };
-    } else if (participantCount === 2) {
-      return { cols: 2, rows: 1, gridClass: 'grid-cols-2' };
-    } else if (participantCount <= 4) {
-      return { cols: 2, rows: 2, gridClass: 'grid-cols-2' };
-    } else if (participantCount <= 6) {
-      return { cols: 3, rows: 2, gridClass: 'grid-cols-3' };
-    } else if (participantCount <= 9) {
-      return { cols: 3, rows: 3, gridClass: 'grid-cols-3' };
-    } else if (participantCount <= 12) {
-      return { cols: 4, rows: 3, gridClass: 'grid-cols-4' };
-    } else if (participantCount <= 16) {
-      return { cols: 4, rows: 4, gridClass: 'grid-cols-4' };
-    } else if (participantCount <= 20) {
-      return { cols: 5, rows: 4, gridClass: 'grid-cols-5' };
-    } else if (participantCount <= 25) {
-      return { cols: 5, rows: 5, gridClass: 'grid-cols-5' };
-    } else {
-      // For more participants, calculate optimal grid
-      const cols = Math.ceil(Math.sqrt(participantCount));
+    // Mobile-first approach
+    const getMobileLayout = (count: number) => {
+      if (count === 1) {
+        return { cols: 1, rows: 1, gridClass: 'grid-cols-1' };
+      } else if (count === 2) {
+        return { cols: 1, rows: 2, gridClass: 'grid-cols-1' };
+      } else if (count === 3) {
+        return { cols: 1, rows: 3, gridClass: 'grid-cols-1' }; // 2 top, 1 bottom
+      } else if (count === 4) {
+        return { cols: 2, rows: 2, gridClass: 'grid-cols-2' };
+      } else if (count <= 6) {
+        return { cols: 2, rows: 3, gridClass: 'grid-cols-2' };
+      } else if (count <= 8) {
+        return { cols: 2, rows: 4, gridClass: 'grid-cols-2' };
+      } else {
+        // For more participants on mobile, stick to 2 columns
+        const rows = Math.ceil(count / 2);
+        return { cols: 2, rows: rows, gridClass: 'grid-cols-2' };
+      }
+    };
 
-      // Ensure we don't exceed reasonable limits
-      const maxCols = Math.min(cols, 8);
-      const maxRows = Math.ceil(participantCount / maxCols);
+    // Desktop layout
+    const getDesktopLayout = (count: number) => {
+      if (count === 1) {
+        return { cols: 1, rows: 1, gridClass: 'md:grid-cols-1' };
+      } else if (count === 2) {
+        return { cols: 2, rows: 1, gridClass: 'md:grid-cols-2' };
+      } else if (count === 3) {
+        return { cols: 2, rows: 2, gridClass: 'md:grid-cols-2' }; // 2 top, 1 bottom
+      } else if (count <= 4) {
+        return { cols: 2, rows: 2, gridClass: 'md:grid-cols-2' };
+      } else if (count <= 6) {
+        return { cols: 3, rows: 2, gridClass: 'md:grid-cols-3' };
+      } else if (count <= 9) {
+        return { cols: 3, rows: 3, gridClass: 'md:grid-cols-3' };
+      } else if (count <= 12) {
+        return { cols: 4, rows: 3, gridClass: 'md:grid-cols-4' };
+      } else if (count <= 16) {
+        return { cols: 4, rows: 4, gridClass: 'md:grid-cols-4' };
+      } else if (count <= 20) {
+        return { cols: 5, rows: 4, gridClass: 'md:grid-cols-5' };
+      } else if (count <= 25) {
+        return { cols: 5, rows: 5, gridClass: 'md:grid-cols-5' };
+      } else {
+        // For more participants, calculate optimal grid
+        const cols = Math.ceil(Math.sqrt(count));
+        const maxCols = Math.min(cols, 8);
+        return {
+          cols: maxCols,
+          rows: Math.ceil(count / maxCols),
+          gridClass: `md:grid-cols-${maxCols}`
+        };
+      }
+    };
 
-      return {
-        cols: maxCols,
-        rows: maxRows,
-        gridClass: `grid-cols-${maxCols}`
-      };
-    }
+    const mobileLayout = getMobileLayout(participantCount);
+    const desktopLayout = getDesktopLayout(participantCount);
+
+    // Combine mobile and desktop classes
+    return {
+      cols: desktopLayout.cols,
+      rows: desktopLayout.rows,
+      gridClass: `${mobileLayout.gridClass} ${desktopLayout.gridClass}`
+    };
   };// Use the enhanced WebRTC hook
   const {
     remoteStreams,
@@ -139,9 +172,11 @@ const MeetingRoom = () => {
           {socketId && <p className="text-sm">Socket ID: {socketId}</p>}
           {!connected && <p className="text-sm text-yellow-500">Connecting...</p>}
           {connected && <p className="text-sm text-green-500">Connected • {participantCount} participants</p>}
-        </header>        <div className="flex flex-1 overflow-hidden">
-          {/* Main video area */}          <main className={`flex-1 p-2 ${isChatOpen ? 'md:w-3/4' : ''}`}>
-            <div className={`grid ${gridLayout.gridClass} gap-2 h-full w-full`} style={{ gridAutoRows: '1fr' }}>
+        </header>
+        <div className="flex flex-1 overflow-hidden">
+          {/* Main video area */}
+          <main className={`flex-1 p-2 ${isChatOpen ? 'md:w-3/4' : ''}`}>
+            <div className={`grid ${gridLayout.gridClass} gap-2 h-full w-full auto-rows-fr`}>
               {/* Local video */}
               <ParticipantView
                 stream={localStream}
