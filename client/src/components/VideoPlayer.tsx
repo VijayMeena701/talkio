@@ -85,13 +85,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIsVideoMuted(!isVideoMuted);
     }
   };
-
   return (
     <div className={`relative w-full h-full bg-black rounded-lg overflow-hidden group ${className}`}>
       {/* Video element */}
       <video
         ref={videoRef}
-        className={`w-full h-full object-cover ${isScreenShare ? 'object-contain' : 'object-cover'}`}
+        className={`w-full h-full ${isScreenShare ? 'object-contain' : 'object-cover'}`}
         autoPlay
         playsInline
         muted={isVideoMuted}

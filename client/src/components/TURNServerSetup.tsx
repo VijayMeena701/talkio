@@ -104,9 +104,9 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
     };
 
     return (
-        <div className="p-6 bg-white rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold mb-4">TURN Server Configuration</h2>
-            <p className="text-gray-600 mb-6">
+        <div>
+            <h2 className="text-2xl font-bold mb-4 text-white">TURN Server Configuration</h2>
+            <p className="text-gray-300 mb-6">
                 Configure your own TURN server for reliable cross-network video conferencing.
                 TURN servers help establish connections when participants are behind firewalls or NATs.
             </p>
@@ -118,9 +118,9 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
                         id="useCustomTURN"
                         checked={isUsingCustomTURN}
                         onChange={(e) => setIsUsingCustomTURN(e.target.checked)}
-                        className="mr-2"
+                        className="mr-2 bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500"
                     />
-                    <label htmlFor="useCustomTURN" className="text-sm font-medium">
+                    <label htmlFor="useCustomTURN" className="text-sm font-medium text-gray-200">
                         Use Custom TURN Server
                     </label>
                 </div>
@@ -128,7 +128,7 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
                 {isUsingCustomTURN && (
                     <div className="space-y-4 border-l-4 border-blue-500 pl-4 ml-4">
                         <div>
-                            <label htmlFor="turnUrls" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="turnUrls" className="block text-sm font-medium text-gray-200">
                                 TURN Server URLs
                             </label>
                             <input
@@ -137,16 +137,16 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
                                 value={turnConfig.urls}
                                 onChange={(e) => setTurnConfig({ ...turnConfig, urls: e.target.value })}
                                 placeholder="turn:your-server.com:3478,turns:your-server.com:5349"
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400"
                             />
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-400 mt-1">
                                 Comma-separated list of TURN server URLs
                             </p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="turnUsername" className="block text-sm font-medium text-gray-700">
+                                <label htmlFor="turnUsername" className="block text-sm font-medium text-gray-200">
                                     Username
                                 </label>
                                 <input
@@ -155,12 +155,12 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
                                     value={turnConfig.username}
                                     onChange={(e) => setTurnConfig({ ...turnConfig, username: e.target.value })}
                                     placeholder="your-username"
-                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400"
                                 />
                             </div>
 
                             <div>
-                                <label htmlFor="turnCredential" className="block text-sm font-medium text-gray-700">
+                                <label htmlFor="turnCredential" className="block text-sm font-medium text-gray-200">
                                     Password/Credential
                                 </label>
                                 <input
@@ -169,7 +169,7 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
                                     value={turnConfig.credential}
                                     onChange={(e) => setTurnConfig({ ...turnConfig, credential: e.target.value })}
                                     placeholder="your-password"
-                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400"
                                 />
                             </div>
                         </div>
@@ -185,8 +185,8 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
 
                             {validationResult && (
                                 <div className={`px-3 py-2 rounded-md text-sm ${validationResult === 'success'
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-red-100 text-red-800'
+                                    ? 'bg-green-800 text-green-200'
+                                    : 'bg-red-800 text-red-200'
                                     }`}>
                                     {validationResult === 'success' ? 'Valid credentials!' : 'Invalid credentials!'}
                                 </div>
@@ -198,28 +198,28 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
                 <div>
                     <button
                         onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        className="text-blue-400 hover:text-blue-300 text-sm font-medium"
                     >
                         {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
                     </button>
                 </div>
 
                 {showAdvanced && (
-                    <div className="space-y-4 border-l-4 border-gray-300 pl-4 ml-4">
+                    <div className="space-y-4 border-l-4 border-gray-600 pl-4 ml-4">
                         <div>
-                            <label htmlFor="iceTransportPolicy" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="iceTransportPolicy" className="block text-sm font-medium text-gray-200">
                                 ICE Transport Policy
                             </label>
                             <select
                                 id="iceTransportPolicy"
                                 value={iceTransportPolicy}
                                 onChange={(e) => setIceTransportPolicy(e.target.value as RTCIceTransportPolicy)}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                             >
                                 <option value="all">All (STUN + TURN)</option>
                                 <option value="relay">Relay Only (TURN only)</option>
                             </select>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-400 mt-1">
                                 &ldquo;Relay Only&rdquo; forces all traffic through TURN servers for maximum privacy
                             </p>
                         </div>
@@ -245,9 +245,9 @@ const TURNServerSetup: React.FC<TURNServerSetupProps> = ({ onConfigurationChange
                     </button>
                 </div>
 
-                <div className="mt-6 p-4 bg-gray-50 rounded-md">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Current Status:</h3>
-                    <ul className="text-sm text-gray-600 space-y-1">
+                <div className="mt-6 p-4 bg-gray-700 rounded-md">
+                    <h3 className="text-sm font-medium text-gray-200 mb-2">Current Status:</h3>
+                    <ul className="text-sm text-gray-300 space-y-1">
                         <li>• Using Custom TURN: {turnConfigService.isUsingCustomTURN() ? 'Yes' : 'No'}</li>
                         <li>• ICE Transport Policy: {iceTransportPolicy}</li>
                         <li>• ICE Servers: {turnConfigService.getICEServers().length} configured</li>

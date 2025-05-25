@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import TURNConfigService from '@/services/turn-config.service';
 
 interface TURNStatusIndicatorProps {
@@ -12,11 +12,7 @@ const TURNStatusIndicator: React.FC<TURNStatusIndicatorProps> = ({ className = '
 
     const turnConfigService = TURNConfigService.getInstance();
 
-    useEffect(() => {
-        checkTURNStatus();
-    }, []);
-
-    const checkTURNStatus = async () => {
+    const checkTURNStatus = useCallback(async () => {
         const usingTURN = turnConfigService.isUsingCustomTURN();
         setIsUsingTURN(usingTURN);
 
@@ -32,10 +28,14 @@ const TURNStatusIndicator: React.FC<TURNStatusIndicatorProps> = ({ className = '
                 setIsLoading(false);
             }
         }
-    };
+    }, [turnConfigService]);
+
+    useEffect(() => {
+        checkTURNStatus();
+    }, [checkTURNStatus]);
 
     const getStatusColor = () => {
-        if (!isUsingTURN) return 'bg-gray-400';
+        if (!isUsingTURN) return 'bg-lime-500';
         if (isLoading) return 'bg-yellow-400';
         if (isConnected === null) return 'bg-gray-400';
         return isConnected ? 'bg-green-400' : 'bg-red-400';
@@ -66,7 +66,7 @@ const TURNStatusIndicator: React.FC<TURNStatusIndicatorProps> = ({ className = '
     return (
         <div className={`flex items-center space-x-2 ${className}`} title={getTooltipText()}>
             <div className={`w-3 h-3 rounded-full ${getStatusColor()}`}></div>
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-400">
                 {getStatusText()}
             </span>
             {isUsingTURN && (

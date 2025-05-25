@@ -15,14 +15,14 @@ const SettingsPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-900">
             {/* Header */}
-            <div className="bg-white shadow">
+            <div className="bg-gray-800 shadow-lg">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center py-6">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-                            <p className="text-gray-600">Configure your video conferencing preferences</p>
+                            <h1 className="text-3xl font-bold text-white">Settings</h1>
+                            <p className="text-gray-300">Configure your video conferencing preferences</p>
                         </div>
                         <div className="flex items-center space-x-4">
                             <TURNStatusIndicator />
@@ -38,15 +38,15 @@ const SettingsPage = () => {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="bg-white rounded-lg shadow">
+                <div className="bg-gray-800 rounded-lg shadow-xl">
                     {/* Tab Navigation */}
-                    <div className="border-b border-gray-200">
+                    <div className="border-b border-gray-700">
                         <nav className="-mb-px flex">
                             <button
                                 onClick={() => setActiveTab('turn')}
                                 className={`py-4 px-6 text-sm font-medium border-b-2 ${activeTab === 'turn'
-                                        ? 'border-blue-500 text-blue-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    ? 'border-blue-500 text-blue-400'
+                                    : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
                                     }`}
                             >
                                 TURN Server
@@ -54,8 +54,8 @@ const SettingsPage = () => {
                             <button
                                 onClick={() => setActiveTab('general')}
                                 className={`py-4 px-6 text-sm font-medium border-b-2 ${activeTab === 'general'
-                                        ? 'border-blue-500 text-blue-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    ? 'border-blue-500 text-blue-400'
+                                    : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
                                     }`}
                             >
                                 General
@@ -71,44 +71,44 @@ const SettingsPage = () => {
 
                         {activeTab === 'general' && (
                             <div>
-                                <h2 className="text-2xl font-bold mb-4">General Settings</h2>
+                                <h2 className="text-2xl font-bold mb-4 text-white">General Settings</h2>
                                 <div className="space-y-6">
                                     <div>
-                                        <h3 className="text-lg font-medium mb-2">Audio & Video Defaults</h3>
+                                        <h3 className="text-lg font-medium mb-2 text-gray-200">Audio & Video Defaults</h3>
                                         <div className="space-y-2">
                                             <label className="flex items-center">
                                                 <input type="checkbox" className="mr-2" defaultChecked />
-                                                <span className="text-sm">Enable microphone by default</span>
+                                                <span className="text-sm text-gray-300">Enable microphone by default</span>
                                             </label>
                                             <label className="flex items-center">
                                                 <input type="checkbox" className="mr-2" />
-                                                <span className="text-sm">Enable camera by default</span>
+                                                <span className="text-sm text-gray-300">Enable camera by default</span>
                                             </label>
                                         </div>
                                     </div>
 
                                     <div>
-                                        <h3 className="text-lg font-medium mb-2">Connection Settings</h3>
+                                        <h3 className="text-lg font-medium mb-2 text-gray-200">Connection Settings</h3>
                                         <div className="space-y-2">
                                             <label className="flex items-center">
                                                 <input type="checkbox" className="mr-2" defaultChecked />
-                                                <span className="text-sm">Automatically reconnect on connection loss</span>
+                                                <span className="text-sm text-gray-300">Automatically reconnect on connection loss</span>
                                             </label>
                                             <label className="flex items-center">
                                                 <input type="checkbox" className="mr-2" defaultChecked />
-                                                <span className="text-sm">Show connection quality indicators</span>
+                                                <span className="text-sm text-gray-300">Show connection quality indicators</span>
                                             </label>
                                         </div>
                                     </div>
 
                                     <div>
-                                        <h3 className="text-lg font-medium mb-2">Privacy Settings</h3>
+                                        <h3 className="text-lg font-medium mb-2 text-gray-200">Privacy Settings</h3>
                                         <div className="space-y-2">
                                             <label className="flex items-center">
                                                 <input type="checkbox" className="mr-2" />
-                                                <span className="text-sm">Force all traffic through TURN servers (relay mode)</span>
+                                                <span className="text-sm text-gray-300">Force all traffic through TURN servers (relay mode)</span>
                                             </label>
-                                            <p className="text-xs text-gray-500 ml-6">
+                                            <p className="text-xs text-gray-400 ml-6">
                                                 Enables maximum privacy but requires a TURN server
                                             </p>
                                         </div>
@@ -124,16 +124,16 @@ const SettingsPage = () => {
                 </div>
 
                 {/* Help Section */}
-                <div className="mt-8 bg-blue-50 rounded-lg p-6">
-                    <h3 className="text-lg font-medium text-blue-900 mb-2">Need Help Setting Up a TURN Server?</h3>
-                    <p className="text-blue-700 mb-4">
+                <div className="mt-8 bg-gray-800 border border-blue-800 rounded-lg p-6">
+                    <h3 className="text-lg font-medium text-blue-300 mb-2">Need Help Setting Up a TURN Server?</h3>
+                    <p className="text-gray-300 mb-4">
                         TURN servers help ensure reliable video conferencing connections, especially when participants
                         are behind firewalls or on restricted networks.
                     </p>
-                    <div className="space-y-2 text-sm text-blue-600">
-                        <p>• <strong>Easy setup:</strong> Use our Docker configuration for quick deployment</p>
-                        <p>• <strong>Cloud providers:</strong> Deploy on AWS, Google Cloud, or Digital Ocean</p>
-                        <p>• <strong>Testing tools:</strong> Built-in connectivity testing to verify your setup</p>
+                    <div className="space-y-2 text-sm text-gray-300">
+                        <p>• <strong className="text-blue-300">Easy setup:</strong> Use our Docker configuration for quick deployment</p>
+                        <p>• <strong className="text-blue-300">Cloud providers:</strong> Deploy on AWS, Google Cloud, or Digital Ocean</p>
+                        <p>• <strong className="text-blue-300">Testing tools:</strong> Built-in connectivity testing to verify your setup</p>
                     </div>
                     <a
                         href="/TURN_SERVER_SETUP.md"

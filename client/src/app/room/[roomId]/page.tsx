@@ -6,14 +6,48 @@ import useWebRTC from '@/app/hooks/useWebRTC';
 import ControlBar from '@/components/ControlBar';
 import ParticipantView from '@/components/ParticipantView';
 import Chat from '@/components/Chat';
-import ErrorBoundary from '../../../components/ErrorBoundary';
-import LoadingSpinner from '../../../components/LoadingSpinner';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const MeetingRoom = () => {
   const roomId = useParams().roomId as string;
   const userName = useSearchParams().get('userName') as string;
   const [localStream, setLocalStream] = React.useState<MediaStream | null>(null);
-  const [isChatOpen, setIsChatOpen] = React.useState(false);  // Use the enhanced WebRTC hook
+  const [isChatOpen, setIsChatOpen] = React.useState(false);  // Calculate optimal grid layout based on participant count
+  const getGridLayout = (participantCount: number) => {
+    if (participantCount === 1) {
+      return { cols: 1, rows: 1, gridClass: 'grid-cols-1' };
+    } else if (participantCount === 2) {
+      return { cols: 2, rows: 1, gridClass: 'grid-cols-2' };
+    } else if (participantCount <= 4) {
+      return { cols: 2, rows: 2, gridClass: 'grid-cols-2' };
+    } else if (participantCount <= 6) {
+      return { cols: 3, rows: 2, gridClass: 'grid-cols-3' };
+    } else if (participantCount <= 9) {
+      return { cols: 3, rows: 3, gridClass: 'grid-cols-3' };
+    } else if (participantCount <= 12) {
+      return { cols: 4, rows: 3, gridClass: 'grid-cols-4' };
+    } else if (participantCount <= 16) {
+      return { cols: 4, rows: 4, gridClass: 'grid-cols-4' };
+    } else if (participantCount <= 20) {
+      return { cols: 5, rows: 4, gridClass: 'grid-cols-5' };
+    } else if (participantCount <= 25) {
+      return { cols: 5, rows: 5, gridClass: 'grid-cols-5' };
+    } else {
+      // For more participants, calculate optimal grid
+      const cols = Math.ceil(Math.sqrt(participantCount));
+
+      // Ensure we don't exceed reasonable limits
+      const maxCols = Math.min(cols, 8);
+      const maxRows = Math.ceil(participantCount / maxCols);
+
+      return {
+        cols: maxCols,
+        rows: maxRows,
+        gridClass: `grid-cols-${maxCols}`
+      };
+    }
+  };// Use the enhanced WebRTC hook
   const {
     remoteStreams,
     connected,
@@ -27,12 +61,16 @@ const MeetingRoom = () => {
     isAudioEnabled,
     isVideoEnabled,
     leaveRoom,
-    participantCount
-  } = useWebRTC({
-    meetingId: roomId,
-    userName,
-    localStream
-  });
+    participantCount } = useWebRTC({
+      meetingId: roomId,
+      userName,
+      localStream
+    });
+
+  // Calculate total participants (local + remote)
+  const totalParticipants = 1 + Object.keys(remoteStreams).length;
+  const gridLayout = getGridLayout(totalParticipants);
+
   React.useEffect(() => {
     if (!roomId || !userName) return;
 
@@ -101,29 +139,30 @@ const MeetingRoom = () => {
           {socketId && <p className="text-sm">Socket ID: {socketId}</p>}
           {!connected && <p className="text-sm text-yellow-500">Connecting...</p>}
           {connected && <p className="text-sm text-green-500">Connected • {participantCount} participants</p>}
-        </header>
-
-        <div className="flex flex-1 overflow-hidden">
-          {/* Main video area */}
-          <main className={`flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 overflow-y-auto ${isChatOpen ? 'md:w-3/4' : ''}`}>            {/* Local video */}
-            <ParticipantView
-              stream={localStream}
-              userName={userName || "You"}
-              isLocal={true}
-              isVideoEnabled={isVideoEnabled}
-              isAudioEnabled={isAudioEnabled}
-            />{/* Remote videos */}
-            {Object.entries(remoteStreams).map(([peerId, streamData]) => (
+        </header>        <div className="flex flex-1 overflow-hidden">
+          {/* Main video area */}          <main className={`flex-1 p-2 ${isChatOpen ? 'md:w-3/4' : ''}`}>
+            <div className={`grid ${gridLayout.gridClass} gap-2 h-full w-full`} style={{ gridAutoRows: '1fr' }}>
+              {/* Local video */}
               <ParticipantView
-                key={peerId}
-                stream={streamData.stream}
-                userName={streamData.userName || `User ${peerId.substring(0, 6)}`}
-                isLocal={false}
-                isVideoEnabled={streamData.isVideoEnabled}
-                isAudioEnabled={streamData.isAudioEnabled}
+                stream={localStream}
+                userName={userName || "You"}
+                isLocal={true}
+                isVideoEnabled={isVideoEnabled}
+                isAudioEnabled={isAudioEnabled}
               />
-            ))}
-          </main>          {/* Chat sidebar */}
+              {/* Remote videos */}
+              {Object.entries(remoteStreams).map(([peerId, streamData]) => (
+                <ParticipantView
+                  key={peerId}
+                  stream={streamData.stream}
+                  userName={streamData.userName || `User ${peerId.substring(0, 6)}`}
+                  isLocal={false}
+                  isVideoEnabled={streamData.isVideoEnabled}
+                  isAudioEnabled={streamData.isAudioEnabled}
+                />
+              ))}
+            </div>
+          </main>{/* Chat sidebar */}
           {isChatOpen && (
             <aside className="w-full md:w-1/4 bg-gray-800 border-l border-gray-700">
               <Chat
